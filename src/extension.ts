@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import axios from 'axios';
 
-const API_URL = 'https://e56c-35-237-108-229.ngrok-free.app/translate';
+const API_URL = 'https://016c-34-32-219-39.ngrok-free.app/translate';
 
 export function activate(context: vscode.ExtensionContext) {
     console.log('Extension "codetransjava2csharp" is now active!');
@@ -88,12 +88,52 @@ async function translateJavaToCSharp(javaCode: string): Promise<string> {
             return '// Error: API tidak mengembalikan hasil translasi yang valid.';
         }
 
-        return response.data.translated_code;
+        const rawTranslatedCode = response.data.translated_code;
+
+        const formattedCode = formatCSharpCode(rawTranslatedCode);
+
+        console.log('Kode setelah diformat:', formattedCode);
+        return formattedCode;
     } catch (error) {
         console.error('Error saat mengakses API:', error);
         vscode.window.showErrorMessage('Gagal mengakses API! Periksa koneksi atau server API.');
         return '// Error: Gagal mengakses API.';
     }
+}
+
+function formatCSharpCode(code: string): string {
+    let indentLevel = 0; // Menyimpan level indentasi
+    const indentSize = 4; // Jumlah spasi untuk setiap level indentasi
+
+    const lines = code
+        .replace(/;\s*/g, ';\n') // Tambahkan newline setelah semicolon
+        .replace(/{\s*/g, '{\n') // Tambahkan newline setelah opening brace
+        .replace(/}\s*/g, '}\n') // Tambahkan newline setelah closing brace
+        .replace(/\)\s*{/g, ') {\n') // Tambahkan newline sebelum opening brace
+        .replace(/\n\s*\n/g, '\n') // Hilangkan newline ganda
+        .split('\n'); // Pisahkan per baris untuk diproses
+
+    const formattedLines = lines.map(line => {
+        // Trim spasi di awal/akhir baris
+        const trimmedLine = line.trim();
+
+        if (trimmedLine === '}') {
+            // Jika menemukan '}', kurangi indentasi terlebih dahulu
+            indentLevel = Math.max(0, indentLevel - 1);
+        }
+
+        // Tambahkan indentasi sesuai level saat ini
+        const indentedLine = ' '.repeat(indentLevel * indentSize) + trimmedLine;
+
+        if (trimmedLine.endsWith('{')) {
+            // Jika baris berakhir dengan '{', tingkatkan indentasi
+            indentLevel++;
+        }
+
+        return indentedLine;
+    });
+
+    return formattedLines.join('\n').trim(); // Gabungkan kembali menjadi string
 }
 
 export function deactivate() {}
