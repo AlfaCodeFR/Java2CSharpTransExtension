@@ -40,7 +40,7 @@ exports.activate = activate;
 exports.deactivate = deactivate;
 const vscode = __importStar(require("vscode"));
 const axios_1 = __importDefault(require("axios"));
-const API_URL = 'https://016c-34-32-219-39.ngrok-free.app/translate';
+const API_URL = 'https://4507-34-147-89-48.ngrok-free.app/translate';
 function activate(context) {
     console.log('Extension "codetransjava2csharp" is now active!');
     let disposable = vscode.commands.registerCommand('extension.translateJavaToCSharp', async () => {

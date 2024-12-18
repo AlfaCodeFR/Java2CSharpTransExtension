@@ -3,8 +3,13 @@
   "displayName": "Code Translation Extension Java to C#",
   "description": "",
   "version": "0.0.1",
+  "publisher": "fathurrasyid",
   "engines": {
     "vscode": "^1.95.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/username/repo-name.git"
   },
   "categories": [
     "Other"

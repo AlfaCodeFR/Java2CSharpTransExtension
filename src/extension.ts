@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import axios from 'axios';
 
-const API_URL = 'https://016c-34-32-219-39.ngrok-free.app/translate';
+const API_URL = 'https://4507-34-147-89-48.ngrok-free.app/translate';
 
 export function activate(context: vscode.ExtensionContext) {
     console.log('Extension "codetransjava2csharp" is now active!');
