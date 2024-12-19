@@ -1,80 +1,88 @@
 import * as vscode from 'vscode';
 import axios from 'axios';
 
-const API_URL = 'https://4507-34-147-89-48.ngrok-free.app/translate';
+const API_URL_JAVA_TO_CS = 'https://7bfc-34-141-244-228.ngrok-free.app/translate_java_to_cs';
+const API_URL_CS_TO_JAVA = 'https://7bfc-34-141-244-228.ngrok-free.app/translate_cs_to_java';
 
 export function activate(context: vscode.ExtensionContext) {
-    console.log('Extension "codetransjava2csharp" is now active!');
+    console.log('Extension "codeTranslator" is now active!');
 
-    let disposable = vscode.commands.registerCommand('extension.translateJavaToCSharp', async () => {
+    // Command: Translasi Java ke C#
+    let disposableJavaToCSharp = vscode.commands.registerCommand('extension.translateJavaToCSharp', async () => {
         console.log('Command extension.translateJavaToCSharp dipanggil.');
-        try {
-            const editor = vscode.window.activeTextEditor;
-
-            if (!editor) {
-                vscode.window.showErrorMessage('Tidak ada editor yang aktif.');
-                return;
-            }
-
-            const selectedText = editor.document.getText(editor.selection);
-            if (!selectedText) {
-                vscode.window.showWarningMessage('Tidak ada teks yang dipilih.');
-                return;
-            }
-
-            const translatedCode = await vscode.window.withProgress({
-                location: vscode.ProgressLocation.Notification,
-                title: "Translating Java to C#...",
-                cancellable: false
-            }, async () => {
-                try {
-                    const result = await translateJavaToCSharp(selectedText);
-                    return result;
-                } catch (error) {
-                    console.error('Error saat translasi:', error);
-                    vscode.window.showErrorMessage('Terjadi kesalahan saat translasi.');
-                    return '// Error: translasi gagal.';
-                }
-            });
-
-            // Edit editor hanya jika hasil translasi valid
-            editor.edit(editBuilder => {
-                if (!translatedCode || translatedCode.startsWith('// Error:')) {
-                    vscode.window.showErrorMessage('Translasi gagal atau tidak valid. Kode asli tidak diubah.');
-                    console.log('Hasil translasi tidak valid:', translatedCode);
-                    return;
-                }
-
-                if (editor.selection.isEmpty) {
-                    vscode.window.showErrorMessage('Tidak ada teks yang dipilih untuk diubah.');
-                    return;
-                }
-
-                console.log('Hasil translasi berhasil:', translatedCode);
-                editBuilder.replace(editor.selection, translatedCode);
-            });
-
-        } catch (error) {
-            console.error('Error pada command translateToCSharp:', error);
-            vscode.window.showErrorMessage('Command gagal dijalankan.');
-        }
+        await executeTranslationCommand(
+            'Java ke C#',
+            API_URL_JAVA_TO_CS
+        );
     });
 
-    context.subscriptions.push(disposable);
+    // Command: Translasi C# ke Java
+    let disposableCSharpToJava = vscode.commands.registerCommand('extension.translateCSharpToJava', async () => {
+        console.log('Command extension.translateCSharpToJava dipanggil.');
+        await executeTranslationCommand(
+            'C# ke Java',
+            API_URL_CS_TO_JAVA
+        );
+    });
+
+    context.subscriptions.push(disposableJavaToCSharp);
+    context.subscriptions.push(disposableCSharpToJava);
 }
 
-async function translateJavaToCSharp(javaCode: string): Promise<string> {
-    console.log("Input ke API:", javaCode);
-    console.log("Menggunakan URL API:", API_URL);
+async function executeTranslationCommand(title: string, apiUrl: string) {
+    try {
+        const editor = vscode.window.activeTextEditor;
+
+        if (!editor) {
+            vscode.window.showErrorMessage('Tidak ada editor yang aktif.');
+            return;
+        }
+
+        const selectedText = editor.document.getText(editor.selection);
+        if (!selectedText) {
+            vscode.window.showWarningMessage('Tidak ada teks yang dipilih.');
+            return;
+        }
+
+        const translatedCode = await vscode.window.withProgress({
+            location: vscode.ProgressLocation.Notification,
+            title: `Translating ${title}...`,
+            cancellable: false
+        }, async () => {
+            try {
+                const result = await callTranslationAPI(apiUrl, selectedText);
+                return result;
+            } catch (error) {
+                console.error(`Error saat translasi ${title}:`, error);
+                vscode.window.showErrorMessage(`Terjadi kesalahan saat translasi ${title}.`);
+                return `// Error: translasi ${title} gagal.`;
+            }
+        });
+
+        // Edit editor hanya jika hasil translasi valid
+        editor.edit(editBuilder => {
+            if (!translatedCode || translatedCode.startsWith('// Error:')) {
+                vscode.window.showErrorMessage(`Translasi ${title} gagal atau tidak valid. Kode asli tidak diubah.`);
+                return;
+            }
+
+            console.log(`Hasil translasi ${title}:`, translatedCode);
+            editBuilder.replace(editor.selection, translatedCode);
+        });
+
+    } catch (error) {
+        console.error(`Error pada command ${title}:`, error);
+        vscode.window.showErrorMessage(`Command gagal dijalankan untuk ${title}.`);
+    }
+}
+
+async function callTranslationAPI(apiUrl: string, code: string): Promise<string> {
+    console.log("Input ke API:", code);
+    console.log("Menggunakan URL API:", apiUrl);
 
     try {
-        // Membentuk payload JSON
-        const payload = {
-            code: javaCode
-        };
-
-        // Mengirimkan payload ke API
-        const response = await axios.post(API_URL, payload, {
+        const payload = { code };
+        const response = await axios.post(apiUrl, payload, {
             headers: {
                 'Content-Type': 'application/json'
             }
@@ -85,12 +93,12 @@ async function translateJavaToCSharp(javaCode: string): Promise<string> {
         if (response.status !== 200 || !response.data || !response.data.translated_code) {
             console.error('Respons API tidak valid:', response);
             vscode.window.showErrorMessage(`API Error: ${response.status} - ${response.statusText}`);
-            return '// Error: API tidak mengembalikan hasil translasi yang valid.';
+            return `// Error: API tidak mengembalikan hasil translasi yang valid.`;
         }
 
         const rawTranslatedCode = response.data.translated_code;
 
-        const formattedCode = formatCSharpCode(rawTranslatedCode);
+        const formattedCode = formatCode(rawTranslatedCode);
 
         console.log('Kode setelah diformat:', formattedCode);
         return formattedCode;
@@ -101,7 +109,7 @@ async function translateJavaToCSharp(javaCode: string): Promise<string> {
     }
 }
 
-function formatCSharpCode(code: string): string {
+function formatCode(code: string): string {
     let indentLevel = 0; // Menyimpan level indentasi
     const indentSize = 4; // Jumlah spasi untuk setiap level indentasi
 

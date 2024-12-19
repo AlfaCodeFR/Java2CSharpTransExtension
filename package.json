@@ -2,7 +2,7 @@
   "name": "codetranslationjava2csharp",
   "displayName": "Code Translation Extension Java to C#",
   "description": "",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "publisher": "fathurrasyid",
   "engines": {
     "vscode": "^1.95.0"
@@ -20,7 +20,11 @@
     "commands": [
       {
         "command": "extension.translateJavaToCSharp",
-        "title": "Translate Java to CSharp"
+        "title": "Translate Java to C#"
+      },
+      {
+        "command": "extension.translateCSharpToJava",
+        "title": "Translate C# to Java"
       }
     ]
   },
